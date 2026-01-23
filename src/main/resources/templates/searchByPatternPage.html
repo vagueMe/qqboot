@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查询页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* 手机端：4行2列布局 */
+        @media screen and (max-width: 768px) {
+            .input-group {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .input-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .input-item label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .input-item input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .input-item input[type="text"] {
+            text-align: center;
+        }
+        .input-item input[type="number"] {
+            text-align: center;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        .result-container {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .idiom-item {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .idiom-fullname {
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+        }
+        .idiom-details {
+            margin-top: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .empty-message {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+        }
+        .position-label {
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>查询</h1>
+    <form id="idiomForm">
+        <div class="input-group">
+            <div class="input-item">
+                <label for="char1"></label>
+                <input type="text" id="char1" placeholder="">
+                <span class="position-label"></span>
+            </div>
+            <div class="input-item">
+                <label for="tone1"></label>
+                <input type="number" id="tone1" min="1" max="4" placeholder="">
+                <span class="position-label"></span>
+            </div>
+            <div class="input-item">
+                <label for="char2"></label>
+                <input type="text" id="char2" placeholder="">
+                <span class="position-label"></span>
+            </div>
+            <div class="input-item">
+                <label for="tone2"></label>
+                <input type="number" id="tone2" min="1" max="4" placeholder="">
+                <span class="position-label"></span>
+            </div>
+            <div class="input-item">
+                <label for="char3"></label>
+                <input type="text" id="char3" placeholder="">
+                <span class="position-label"></span>
+            </div>
+            <div class="input-item">
+                <label for="tone3"></label>
+                <input type="number" id="tone3" min="1" max="4" placeholder="">
+                <span class="position-label"></span>
+            </div>
+            <div class="input-item">
+                <label for="char4"></label>
+                <input type="text" id="char4" placeholder="">
+                <span class="position-label"></span>
+            </div>
+            <div class="input-item">
+                <label for="tone4"></label>
+                <input type="number" id="tone4" min="1" max="4" placeholder="">
+                <span class="position-label"></span>
+            </div>
+        </div>
+        <button type="submit" class="submit-btn">查询</button>
+        <button type="button" class="submit-btn" onclick="resetForm()" style="background-color: #6c757d; margin-top: 10px;">重置</button>
+    </form>
+
+    <div id="errorMessage" class="error-message" style="display: none;"></div>
+    <div id="resultContainer" class="result-container" style="display: none;">
+        <h3>查询结果：</h3>
+        <div id="result"></div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('idiomForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // 获取所有输入值
+        const char1 = document.getElementById('char1').value.trim();
+        const tone1 = document.getElementById('tone1').value.trim();
+        const char2 = document.getElementById('char2').value.trim();
+        const tone2 = document.getElementById('tone2').value.trim();
+        const char3 = document.getElementById('char3').value.trim();
+        const tone3 = document.getElementById('tone3').value.trim();
+        const char4 = document.getElementById('char4').value.trim();
+        const tone4 = document.getElementById('tone4').value.trim();
+
+        // 构造查询模式，格式为 "char1.tone1.char2.tone2.char3.tone3.char4.tone4"
+        let pattern = '成语 ';
+        pattern += char1 || '';
+        pattern += '.';
+        pattern += tone1 || '';
+        pattern += '.';
+        pattern += char2 || '';
+        pattern += '.';
+        pattern += tone2 || '';
+        pattern += '.';
+        pattern += char3 || '';
+        pattern += '.';
+        pattern += tone3 || '';
+        pattern += '.';
+        pattern += char4 || '';
+        pattern += '.';
+        pattern += tone4 || '';
+
+        // 发送请求
+        try {
+            const response = await fetch(`/getIdiomData/searchByPattern?pattern=${encodeURIComponent(pattern)}`);
+            const resultText = await response.text(); // 接收文本响应而不是JSON
+
+            // 清除之前的错误信息
+            document.getElementById('errorMessage').style.display = 'none';
+
+            // 显示结果
+            const resultDiv = document.getElementById('result');
+            if (resultText && resultText.trim() !== '') {
+                // 将换行符转换为HTML<br>标签
+                const formattedResult = resultText.replace(/\n/g, '<br>');
+                resultDiv.innerHTML = `<div class="idiom-item"><div class="idiom-details">${formattedResult}</div></div>`;
+                document.getElementById('resultContainer').style.display = 'block';
+            } else {
+                resultDiv.innerHTML = '<div class="empty-message">没有找到匹配的成语</div>';
+                document.getElementById('resultContainer').style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('errorMessage').textContent = '查询失败: ' + error.message;
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('resultContainer').style.display = 'none';
+        }
+    });
+
+    function resetForm() {
+        document.getElementById('char1').value = '';
+        document.getElementById('tone1').value = '';
+        document.getElementById('char2').value = '';
+        document.getElementById('tone2').value = '';
+        document.getElementById('char3').value = '';
+        document.getElementById('tone3').value = '';
+        document.getElementById('char4').value = '';
+        document.getElementById('tone4').value = '';
+
+        // 隐藏结果和错误信息
+        document.getElementById('resultContainer').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+    }
+</script>
+</body>
+</html>
