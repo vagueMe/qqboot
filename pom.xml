@@ -18,6 +18,7 @@
     <properties>
         <java.version>11</java.version>
         <mirai-core.version>2.15.0</mirai-core.version>
+        <kotlin.version>1.8.10</kotlin.version>
         <okhttp.version>4.9.3</okhttp.version>
         <gson.version>2.8.9</gson.version>
         <slf4j.version>1.7.32</slf4j.version>
@@ -37,18 +38,17 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-community</artifactId>
-            <version>1.0.1-beta6</version>
-        </dependency>
-
-
         <!-- Mirai Core -->
         <dependency>
             <groupId>net.mamoe</groupId>
             <artifactId>mirai-core-jvm</artifactId>
             <version>${mirai-core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
+            <version>${kotlin.version}</version>
         </dependency>
 
         <!-- OkHttp for HTTP requests -->
@@ -102,13 +102,6 @@
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>5.2.3</version>
-        </dependency>
-
-        <!-- 其他依赖（如 velocity 引擎） -->
-        <dependency>
-            <groupId>org.apache.velocity</groupId>
-            <artifactId>velocity-engine-core</artifactId>
-            <version>2.3</version> <!-- 请检查最新版本 -->
         </dependency>
 
         <dependency>
