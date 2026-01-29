@@ -6,6 +6,11 @@ bot:
   qq: xxx
   qqName: xxx
   password: xxx
+  napcatqq:
+    enabled: true
+    endpoint: /napcatqq/message
+    url: xxx
+    accessToken: xxxxx
   listener:
     group: xxx,xxx
 
