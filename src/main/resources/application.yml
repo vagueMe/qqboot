@@ -12,7 +12,8 @@ bot:
     url: xxx
     accessToken: xxxxx
   listener:
-    group: xxx,xxx
+    group: "xxx,xxx"
+    msgBegin: "提问,/,@,成语"
 
 
 # DeepSeek API Configuration

@@ -1,6 +1,8 @@
 package com.hudi.qqboot.controller;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.hudi.qqboot.config.BotConfig;
 import com.hudi.qqboot.config.NapCatQQConfig;
 import com.hudi.qqboot.service.DeepSeekService;
 import com.hudi.qqboot.service.QQMessageService;
@@ -10,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,6 +25,9 @@ import java.util.Map;
 public class NapCatQQController {
 
     private static final Logger logger = LoggerFactory.getLogger(NapCatQQController.class);
+
+    @Autowired
+    private BotConfig botConfig;
 
     @Autowired
     private NapCatQQConfig napCatQQConfig;
@@ -69,12 +75,19 @@ public class NapCatQQController {
                     messageType, userId, groupId, rawMessage, messageId);
 
             // 根据消息类型进行不同处理
-            if ("message".equals(messageType) || "group".equals(messageType) || "private".equals(messageType)) {
-                // 异步处理消息以避免超时
-                processUserMessageAsync(userId, groupId, rawMessage, messageData);
+            List<String> msgBeginList = botConfig.getMsgBegin();
+            List<String> listenerGroup = botConfig.getListenerGroup();
+            if (CollectionUtil.isNotEmpty(msgBeginList)) {
+                for (String i : msgBeginList) {
+                    if (message.startsWith(i)) {
+                        if ("message".equals(messageType) || ("group".equals(messageType) && listenerGroup.contains(groupId)) || "private".equals(messageType)) {
+                            // 异步处理消息以避免超时
+                            processUserMessageAsync(userId, groupId, rawMessage, messageData);
+                        }
+                    }
+                }
             }
-
-
+//            }
             // 返回成功响应，告诉NapCatQQ消息已接收
             return Map.of("retcode", 0, "status", "ok");
         } catch (Exception e) {

@@ -52,10 +52,10 @@ public class MessageListener extends SimpleListenerHost {
         String message = event.getMessage().contentToString();
         long groupId = event.getGroup().getId();
         String senderName = event.getSenderName();
-        String listenerGroup = config.getListenerGroup();
+        List<String> listenerGroup = config.getListenerGroup();
         String qqName = config.getQqName();
         String qq = config.getQq();
-        if (StrUtil.isNotBlank(listenerGroup) && listenerGroup.contains(String.valueOf(groupId))) {
+        if (listenerGroup.contains(String.valueOf(groupId))) {
             if (message.contains("开启新会话") || message.contains("结束会话")) {
                 event.getGroup().sendMessage(new MessageChainBuilder().append("@").append(senderName).append(" 好的，已经开启新会话，让我们重新开始吧！").build());
                 userData.remove(senderName);

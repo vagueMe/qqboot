@@ -4,7 +4,11 @@ import cn.hutool.core.io.FileUtil;
 import com.deepoove.poi.XWPFTemplate;
 import com.deepoove.poi.config.Configure;
 import com.deepoove.poi.plugin.table.LoopColumnTableRenderPolicy;
+import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -15,71 +19,26 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@Data
+@ConfigurationProperties(prefix = "bot")
 public class BotConfig {
-    @Value("${bot.qq}")
     private String qq;
-    @Value("${bot.qqName}")
-    private String qqName; 
+    private String qqName;
 
-    @Value("${bot.password}")
     private String password;
 
-    @Value("${deepseek.api.url}")
     private String deepSeekApiUrl;
 
-    @Value("${deepseek.api.key}")
     private String deepSeekApiKey;
 
     @Value("${bot.listener.group}")
-    private String listenerGroup;
+    private List<String> listenerGroup;
 
-    public String getQq() {
-        return qq;
-    }
+    @Value("${bot.listener.msgBegin:}")
+    private List<String> msgBegin;
 
-    public void setQq(String qq) {
-        this.qq = qq;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setDeepSeekApiUrl(String deepSeekApiUrl) {
-        this.deepSeekApiUrl = deepSeekApiUrl;
-    }
-
-    public void setDeepSeekApiKey(String deepSeekApiKey) {
-        this.deepSeekApiKey = deepSeekApiKey;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getDeepSeekApiUrl() {
-        return deepSeekApiUrl;
-    }
-
-    public String getDeepSeekApiKey() {
-        return deepSeekApiKey;
-    }
-
-    public String getListenerGroup() {
-        return listenerGroup;
-    }
-
-    public void setListenerGroup(String listenerGroup) {
-        this.listenerGroup = listenerGroup;
-    }
-
-    public String getQqName() {
-        return qqName;
-    }
-
-    public void setQqName(String qqName) {
-        this.qqName = qqName;
-    }
+    @Autowired
+    private Environment environment;
 
     public static void main(String[] args) throws IOException {
 
