@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>优化版 LangChain4j 流式响应演示</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .response-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .panel {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fafafa;
+        }
+        
+        .panel h3 {
+            margin-top: 0;
+            color: #555;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        
+        .thinking-content {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            min-height: 50px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        
+        .response-content {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+        
+        .status-info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            color: #721c24;
+        }
+        
+        .tool-call {
+            background: #e2e3e5;
+            border-left: 4px solid #6c757d;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .token-counter {
+            background: #6c757d;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: inline-block;
+            margin-left: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 优化版 LangChain4j 流式响应演示</h1>
+        
+        <div class="input-section">
+            <label for="prompt">请输入您的问题：</label>
+            <textarea id="prompt" placeholder="例如：请解释量子计算的基本原理...">请解释人工智能的发展历程</textarea>
+            
+            <div class="controls">
+                <button id="sendBtn" onclick="sendRequest()">🚀 发送请求</button>
+                <button id="stopBtn" onclick="stopStream()" disabled>⏹️ 停止</button>
+                <span class="token-counter">Token: <span id="tokenCount">0</span></span>
+            </div>
+        </div>
+        
+        <div class="response-container">
+            <div class="panel">
+                <h3>💭 AI 思考过程</h3>
+                <div id="thinkingPanel"></div>
+            </div>
+            
+            <div class="panel">
+                <h3>💬 最终响应</h3>
+                <div id="responsePanel"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let tokenCount = 0;
+        
+        function sendRequest() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) {
+                alert('请输入问题内容');
+                return;
+            }
+            
+            // 重置界面
+            resetInterface();
+            
+            // 更新按钮状态
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            
+            // 构建请求URL
+            const url = `/langchain/langchain-stream?prompt=${encodeURIComponent(prompt)}`;
+            
+            // 创建 EventSource 连接
+            eventSource = new EventSource(url);
+            
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleStreamData(data);
+                } catch (error) {
+                    console.error('解析数据失败:', error);
+                    addErrorMessage('数据解析错误: ' + error.message);
+                }
+            };
+            
+            eventSource.onerror = function(error) {
+                console.error('连接错误:', error);
+                addErrorMessage('连接出现错误，请重试');
+                stopStream();
+            };
+        }
+        
+        function handleStreamData(data) {
+            console.log('收到数据:', data);
+            
+            switch(data.type) {
+                case 'status':
+                    handleStatus(data);
+                    break;
+                case 'thinking':
+                    handleThinking(data);
+                    break;
+                case 'content':
+                    handleContent(data);
+                    break;
+                case 'tool_call':
+                    handleToolCall(data);
+                    break;
+                case 'tool_result':
+                    handleToolResult(data);
+                    break;
+                case 'error':
+                    handleError(data);
+                    break;
+                default:
+                    console.warn('未知数据类型:', data.type);
+            }
+        }
+        
+        function handleStatus(data) {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'status-info';
+            statusDiv.textContent = `[${formatTime()}] ${data.description}`;
+            document.getElementById('responsePanel').appendChild(statusDiv);
+            
+            if (data.content === 'completed') {
+                stopStream();
+            }
+        }
+        
+        function handleThinking(data) {
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'thinking-content';
+            thinkingDiv.innerHTML = `<strong>${data.description}</strong>\n${data.content}`;
+            document.getElementById('thinkingPanel').appendChild(thinkingDiv);
+            
+            // 滚动到最新内容
+            thinkingDiv.scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function handleContent(data) {
+            const responseDiv = document.getElementById('responsePanel');
+            let contentDiv = responseDiv.lastElementChild;
+            
+            // 如果最后一个元素不是响应内容容器，则创建新的
+            if (!contentDiv || !contentDiv.classList.contains('response-content')) {
+                contentDiv = document.createElement('div');
+                contentDiv.className = 'response-content';
+                responseDiv.appendChild(contentDiv);
+            }
+            
+            // 追加内容
+            contentDiv.textContent += data.content;
+            tokenCount += data.content.length;
+            document.getElementById('tokenCount').textContent = tokenCount;
+            
+            // 滚动到最新内容
+            contentDiv.scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function handleToolCall(data) {
+            const toolDiv = document.createElement('div');
+            toolDiv.className = 'tool-call';
+            toolDiv.innerHTML = `<strong>[工具调用]</strong> ${data.description}\n${data.content}`;
+            document.getElementById('thinkingPanel').appendChild(toolDiv);
+        }
+        
+        function handleToolResult(data) {
+            const toolDiv = document.createElement('div');
+            toolDiv.className = 'tool-call';
+            toolDiv.innerHTML = `<strong>[工具结果]</strong> ${data.description}\n${data.content}`;
+            document.getElementById('thinkingPanel').appendChild(toolDiv);
+        }
+        
+        function handleError(data) {
+            addErrorMessage(`${data.description}: ${data.content}`);
+            stopStream();
+        }
+        
+        function addErrorMessage(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<strong>❌ 错误:</strong> ${message}`;
+            document.getElementById('responsePanel').appendChild(errorDiv);
+        }
+        
+        function stopStream() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            
+            // 恢复按钮状态
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        }
+        
+        function resetInterface() {
+            document.getElementById('thinkingPanel').innerHTML = '';
+            document.getElementById('responsePanel').innerHTML = '';
+            tokenCount = 0;
+            document.getElementById('tokenCount').textContent = '0';
+        }
+        
+        function formatTime() {
+            const now = new Date();
+            return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        }
+        
+        // 页面卸载时清理连接
+        window.addEventListener('beforeunload', function() {
+            stopStream();
+        });
+    </script>
+</body>
+</html>

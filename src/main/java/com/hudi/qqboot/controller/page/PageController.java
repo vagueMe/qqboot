@@ -13,5 +13,18 @@ public class PageController {
         return "search";
     }
 
+    @GetMapping("/pattern-search")
+    public String patternSearch() {
+        return "searchByPatternPage";
+    }
 
+    @GetMapping("/stream-demo")
+    public String streamDemo() {
+        return "stream-demo";
+    }
+
+    @GetMapping("/simple-stream-test")
+    public String simpleStreamTest() {
+        return "simple-stream-test";
+    }
 }

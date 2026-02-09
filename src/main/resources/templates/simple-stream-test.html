@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>流式接口测试</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h1>流式接口测试</h1>
+    
+    <h2>1. 文本流式生成测试</h2>
+    <button onclick="testStream()">测试 /ds/stream</button>
+    <div id="stream-result" style="border:1px solid #ccc; padding:10px; margin:10px 0; white-space:pre-wrap;"></div>
+    
+    <h2>2. 实时数据推送测试</h2>
+    <button onclick="testRealtime()">测试 /ds/realtime</button>
+    <div id="realtime-result" style="border:1px solid #ccc; padding:10px; margin:10px 0; white-space:pre-wrap;"></div>
+    
+    <h2>3. 文件流式传输测试</h2>
+    <button onclick="testFileStream()">测试 /ds/file-stream</button>
+    <div id="file-result" style="border:1px solid #ccc; padding:10px; margin:10px 0; white-space:pre-wrap;"></div>
+
+    <script>
+        function testStream() {
+            const resultDiv = document.getElementById('stream-result');
+            resultDiv.innerHTML = '开始测试...\n';
+            
+            const eventSource = new EventSource('/langchain/stream?prompt=测试流式响应');
+            
+            eventSource.onmessage = function(event) {
+                resultDiv.innerHTML += event.data + '\n';
+                resultDiv.scrollTop = resultDiv.scrollHeight;
+            };
+            
+            eventSource.onerror = function(event) {
+                resultDiv.innerHTML += '连接结束\n';
+                eventSource.close();
+            };
+        }
+        
+        function testRealtime() {
+            const resultDiv = document.getElementById('realtime-result');
+            resultDiv.innerHTML = '开始测试实时数据...\n';
+            
+            const eventSource = new EventSource('/langchain/realtime?dataType=system');
+            
+            let count = 0;
+            eventSource.onmessage = function(event) {
+                resultDiv.innerHTML += event.data + '\n';
+                resultDiv.scrollTop = resultDiv.scrollHeight;
+                count++;
+                if (count >= 5) {
+                    eventSource.close();
+                    resultDiv.innerHTML += '测试完成\n';
+                }
+            };
+        }
+        
+        function testFileStream() {
+            const resultDiv = document.getElementById('file-result');
+            resultDiv.innerHTML = '开始测试文件流...\n';
+            
+            const eventSource = new EventSource('/langchain/file-stream?fileName=test.txt');
+            
+            eventSource.onmessage = function(event) {
+                resultDiv.innerHTML += event.data + '\n';
+                resultDiv.scrollTop = resultDiv.scrollHeight;
+            };
+            
+            eventSource.onerror = function(event) {
+                resultDiv.innerHTML += '文件传输结束\n';
+                eventSource.close();
+            };
+        }
+    </script>
+</body>
+</html>
