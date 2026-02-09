@@ -16,13 +16,15 @@
     </parent>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <mirai-core.version>2.15.0</mirai-core.version>
         <kotlin.version>1.8.10</kotlin.version>
         <okhttp.version>4.9.3</okhttp.version>
         <gson.version>2.8.9</gson.version>
         <slf4j.version>1.7.32</slf4j.version>
         <logback.version>1.2.6</logback.version>
+        <langchain4j.base.version>1.10.0</langchain4j.base.version>
+        <langchain4j.beta.version>1.10.0-beta18</langchain4j.beta.version>
         <skipTests>true</skipTests> <!-- 默认不跳过测试 -->
     </properties>
 
@@ -36,6 +38,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring WebFlux for reactive streaming -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
         <!-- Mirai Core -->
@@ -157,7 +165,43 @@
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+            <version>${langchain4j.base.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+            <version>${langchain4j.base.version}</version>
+        </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>dev.langchain4j</groupId>-->
+<!--            <artifactId>langchain4j-community-dashscope</artifactId>-->
+<!--            <version>${langchain4j.beta.version}</version>-->
+<!--        </dependency>-->
+
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-community-dashscope-spring-boot-starter</artifactId>
+            <version>${langchain4j.beta.version}</version>
+        </dependency>
+
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-community-bom</artifactId>
+                <version>${langchain4j.beta.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
        <build>
         <plugins>
