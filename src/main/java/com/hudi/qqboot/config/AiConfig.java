@@ -1,0 +1,47 @@
+package com.hudi.qqboot.config;
+
+import dev.langchain4j.community.model.dashscope.QwenChatModel;
+import dev.langchain4j.community.model.dashscope.QwenStreamingChatModel;
+import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.TokenStream;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * @author hudi
+ * @date 05 2月 2026 18:12
+ */
+@Configuration
+public class AiConfig {
+    public interface Assistant {
+        // 可行
+        String chat(String message);
+        // 流式响应 - 出bug
+        TokenStream stream(String message , StreamingChatResponseHandler handler);
+        // 流式响应 -- 出bug
+        void chat(String userMessage, StreamingChatResponseHandler handler);
+    }
+
+    @Bean
+    public Assistant assistant(QwenChatModel qwenChatModel,
+                               QwenStreamingChatModel qwenStreamingChatModel) {
+//        ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(10);
+        ChatMemory chatMemory = MessageWindowChatMemory.builder()
+                .id("12345")
+                .maxMessages(10)
+                .chatMemoryStore(new PersistentChatMemoryStore())
+                .build();
+
+
+        Assistant assistant = AiServices.builder(Assistant.class)
+                .chatModel(qwenChatModel)
+                .streamingChatModel(qwenStreamingChatModel)
+                .chatMemory(chatMemory)
+                .build();
+
+        return  assistant;
+    }
+}
