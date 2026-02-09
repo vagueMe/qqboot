@@ -89,28 +89,19 @@ public class ChatController {
             });
         });
 
-        /*
-        // 会报错 - 不可行
-        Flux<String> objectFlux = Flux.create(sink -> {
-            assistant.chat(prompt, new StreamingChatResponseHandler() {
-
-                @Override
-                public void onPartialResponse(String s) {
-                    sink.next(s);
-                }
-
-                @Override
-                public void onCompleteResponse(ChatResponse completeResponse) {
-                    sink.complete();  // 完成整个响应流
-                }
-
-                @Override
-                public void onError(Throwable error) {
-                    sink.error(error);  // 异常处理
-                }
-            });
-        });*/
-
         return objectFlux;
     }
+
+    @RequestMapping(value = "/streamChatWithAssistant", produces = "text/stream;charset=UTF-8")
+    public Flux<String> streamChatWithAssistant(@RequestParam(defaultValue = "你好") String prompt) {
+        return Flux.create(sink -> {
+            TokenStream tokenStream = assistant.stream(prompt);
+            tokenStream.onPartialResponse(sink::next)
+                    .onError(sink::error)
+                    .onCompleteResponse(i -> sink.complete())
+                    .start();
+        });
+    }
+
+
 }

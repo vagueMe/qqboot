@@ -19,10 +19,8 @@ public class AiConfig {
     public interface Assistant {
         // 可行
         String chat(String message);
-        // 流式响应 - 出bug
-        TokenStream stream(String message , StreamingChatResponseHandler handler);
-        // 流式响应 -- 出bug
-        void chat(String userMessage, StreamingChatResponseHandler handler);
+        // 流式响应
+        TokenStream stream(String message);
     }
 
     @Bean
