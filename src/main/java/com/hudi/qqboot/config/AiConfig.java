@@ -46,6 +46,7 @@ public class AiConfig {
     }
 
 
+    // @MemoryId  @UserMessage  必填
     public interface AssistantUnique {
         // 可行
         String chat(@MemoryId int memoryId, @UserMessage String message);
