@@ -46,6 +46,9 @@ public class ChatController {
     @Autowired
     AiConfig.Assistant assistant;
 
+    @Autowired
+    AiConfig.AssistantUnique assistantUnique;
+
     @RequestMapping("/chat")
     public String chat(@RequestParam(defaultValue = "你是谁") String prompt) {
 //        String chat = chatModel.chat("我是hudi");
@@ -96,6 +99,17 @@ public class ChatController {
     public Flux<String> streamChatWithAssistant(@RequestParam(defaultValue = "你好") String prompt) {
         return Flux.create(sink -> {
             TokenStream tokenStream = assistant.stream(prompt);
+            tokenStream.onPartialResponse(sink::next)
+                    .onError(sink::error)
+                    .onCompleteResponse(i -> sink.complete())
+                    .start();
+        });
+    }
+
+    @RequestMapping(value = "/streamChatWithAssistantMe", produces = "text/stream;charset=UTF-8")
+    public Flux<String> streamChatWithAssistantMe(@RequestParam(defaultValue = "你好", name = "prompt") String prompt, @RequestParam(defaultValue = "1", name = "id") int id) {
+        return Flux.create(sink -> {
+            TokenStream tokenStream = assistantUnique.stream(id, prompt);
             tokenStream.onPartialResponse(sink::next)
                     .onError(sink::error)
                     .onCompleteResponse(i -> sink.complete())

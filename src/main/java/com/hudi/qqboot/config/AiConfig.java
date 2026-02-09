@@ -6,7 +6,9 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.service.UserMessage;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -41,5 +43,28 @@ public class AiConfig {
                 .build();
 
         return  assistant;
+    }
+
+
+    public interface AssistantUnique {
+        // 可行
+        String chat(@MemoryId int memoryId, @UserMessage String message);
+        // 流式响应
+        TokenStream stream(@MemoryId int memoryId, @UserMessage String message);
+    }
+
+    @Bean
+    public AssistantUnique assistantUnique(QwenChatModel qwenChatModel,
+                               QwenStreamingChatModel qwenStreamingChatModel) {
+
+        AssistantUnique assistant = AiServices.builder(AssistantUnique.class)
+                .chatModel(qwenChatModel)
+                .streamingChatModel(qwenStreamingChatModel)
+                .chatMemoryProvider(memoryId ->
+                        MessageWindowChatMemory.builder().maxMessages(10).id(memoryId).build()
+                ).build();
+
+
+        return assistant;
     }
 }
