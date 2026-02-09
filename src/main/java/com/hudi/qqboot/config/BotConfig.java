@@ -26,10 +26,16 @@ public class BotConfig {
     private String qqName;
 
     private String password;
-
+    @Value("${deepseek.api.url}")
     private String deepSeekApiUrl;
-
+    @Value("${deepseek.api.key}")
     private String deepSeekApiKey;
+
+    @Value("${qw.api.key}")
+    private String qwApiKey;
+
+    @Value("${qw.api.url}")
+    private String qwApiUrl;
 
     @Value("${bot.listener.group}")
     private List<String> listenerGroup;
