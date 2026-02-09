@@ -21,7 +21,19 @@ deepseek:
   api:
     url: https://api.deepseek.com/chat/completions
     key: xxxxxx
-
+langchain4j:
+  community:
+    dashscope:
+      chat-model:
+        api-key: xxxxx
+        modelName: qwen3-max
+      streaming-chat-model:
+        api-key: XXXXX
+        modelName: qwen3-max
+qw:
+  api:
+    url: https://qw.deepseek.com/api/v1/chat/completions
+    key: xxxxxx
 # MySQL Database Configuration
 spring:
   profiles:
