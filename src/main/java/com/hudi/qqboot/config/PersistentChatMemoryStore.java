@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author hudi
+ * @author hudi  -- 这个类可以和数据库进行交互，将消息进行持久化
  * @date 05 2月 2026 17:14
  */
 public class PersistentChatMemoryStore implements ChatMemoryStore {

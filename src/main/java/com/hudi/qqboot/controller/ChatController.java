@@ -107,7 +107,7 @@ public class ChatController {
     }
 
     @RequestMapping(value = "/streamChatWithAssistantMe", produces = "text/stream;charset=UTF-8")
-    public Flux<String> streamChatWithAssistantMe(@RequestParam(defaultValue = "你好", name = "prompt") String prompt, @RequestParam(defaultValue = "1", name = "id") int id) {
+    public Flux<String> streamChatWithAssistantMe(@RequestParam(defaultValue = "你好", name = "prompt") String prompt, @RequestParam(defaultValue = "1", name = "id") String id) {
         return Flux.create(sink -> {
             TokenStream tokenStream = assistantUnique.stream(id, prompt);
             tokenStream.onPartialResponse(sink::next)
