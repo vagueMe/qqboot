@@ -2,12 +2,16 @@ package com.hudi.qqboot.config;
 
 import com.hudi.qqboot.service.ToolsService;
 import dev.langchain4j.community.model.dashscope.QwenChatModel;
+import dev.langchain4j.community.model.dashscope.QwenEmbeddingModel;
 import dev.langchain4j.community.model.dashscope.QwenStreamingChatModel;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.*;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,9 +21,33 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class AiConfig {
+
+    public static int tempInt = 0;
+
+    @Bean
+    public EmbeddingStore getEmbeddingStore() {
+        return new InMemoryEmbeddingStore<>();
+    }
+
+//    private static InMemoryEmbeddingStore<TextSegment> embeddingStore = new InMemoryEmbeddingStore<>();
+//
+//    // 使用单利模式获取embeddingStore
+//    public static EmbeddingStore<TextSegment> getEmbeddingStore() {
+//        if (embeddingStore == null) {
+//           synchronized (EmbeddingStore.class) {
+//               if (embeddingStore == null) {
+//                   embeddingStore = new InMemoryEmbeddingStore<>();
+//               }
+//           }
+//        }
+//        return embeddingStore;
+//    }
+
+
     public interface Assistant {
         // 可行
         String chat(String message);
+
         // 流式响应
         TokenStream stream(String message);
     }
@@ -41,7 +69,7 @@ public class AiConfig {
                 .chatMemory(chatMemory)
                 .build();
 
-        return  assistant;
+        return assistant;
     }
 
 
@@ -49,6 +77,7 @@ public class AiConfig {
     public interface AssistantUnique {
         // 可行
         String chat(@MemoryId String memoryId, @UserMessage String message);
+
         // 流式响应
         @SystemMessage("您是游戏账号销售。请以友好、乐于助人且愉快的方式来回复。\n" +
                 "                        您正在通过在线聊天系统与客户互动。 \n" +
@@ -60,19 +89,33 @@ public class AiConfig {
 
     @Bean
     public AssistantUnique assistantUnique(QwenChatModel qwenChatModel,
-                                           QwenStreamingChatModel qwenStreamingChatModel, ToolsService toolsService) {
+                                           QwenStreamingChatModel qwenStreamingChatModel,
+                                           ToolsService toolsService,
+                                           QwenEmbeddingModel qwenEmbeddingModel,
+                                           EmbeddingStore<TextSegment> embeddingStore
+    ) {
         PersistentChatMemoryStore store = new PersistentChatMemoryStore();
 
-        ChatMemoryProvider provider = memoryId ->  MessageWindowChatMemory.builder()
-                    .id(memoryId)
-                    .maxMessages(10)
-                    .chatMemoryStore(store)
-                    .build();
+        // 对话记忆
+        ChatMemoryProvider provider = memoryId -> MessageWindowChatMemory.builder()
+                .id(memoryId)
+                .maxMessages(10)
+                .chatMemoryStore(store)
+                .build();
+
+        // 内容检索器
+        EmbeddingStoreContentRetriever contentRetriever = EmbeddingStoreContentRetriever.builder()
+                .embeddingModel(qwenEmbeddingModel)
+                .embeddingStore(embeddingStore)
+                .maxResults(4)
+                .minScore(0.7)
+                .build();
 
         AssistantUnique assistant = AiServices.builder(AssistantUnique.class)
                 .chatModel(qwenChatModel)
                 .tools(toolsService)
                 .streamingChatModel(qwenStreamingChatModel)
+                .contentRetriever(contentRetriever)
 //                .chatMemoryProvider(memoryId ->
 //                        MessageWindowChatMemory.builder().maxMessages(10).id(memoryId).build()
 //                ).build();

@@ -2,10 +2,9 @@ package com.hudi.qqboot.controller;
 
 import com.hudi.qqboot.config.AiConfig;
 import com.hudi.qqboot.config.PersistentChatMemoryStore;
+import com.hudi.qqboot.service.EmbeddingStoreService;
 import dev.langchain4j.community.model.dashscope.QwenChatModel;
 import dev.langchain4j.community.model.dashscope.QwenStreamingChatModel;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -50,6 +49,10 @@ public class ChatController {
 
     @Autowired
     AiConfig.AssistantUnique assistantUnique;
+
+    @Autowired
+    EmbeddingStoreService embeddingStoreService;
+
 
     @RequestMapping("/chat")
     public String chat(@RequestParam(defaultValue = "你是谁") String prompt) {
@@ -119,5 +122,15 @@ public class ChatController {
         });
     }
 
+
+    @RequestMapping("/initEm")
+    public String initEmbedding() {
+        String msg = "初始化成功";
+        boolean b = embeddingStoreService.initEmbedding();
+        if (!Boolean.TRUE.equals(b)) {
+            msg = "请勿再次初始化";
+        }
+        return msg;
+    }
 
 }
