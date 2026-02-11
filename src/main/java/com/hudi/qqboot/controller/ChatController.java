@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
+import java.time.LocalDate;
+
 /**
  * @author hudi
  * @date 05 2月 2026 15:32
@@ -109,7 +111,7 @@ public class ChatController {
     @RequestMapping(value = "/streamChatWithAssistantMe", produces = "text/stream;charset=UTF-8")
     public Flux<String> streamChatWithAssistantMe(@RequestParam(defaultValue = "你好", name = "prompt") String prompt, @RequestParam(defaultValue = "1", name = "id") String id) {
         return Flux.create(sink -> {
-            TokenStream tokenStream = assistantUnique.stream(id, prompt);
+            TokenStream tokenStream = assistantUnique.stream(id, prompt, LocalDate.parse("2028-12-12").toString());
             tokenStream.onPartialResponse(sink::next)
                     .onError(sink::error)
                     .onCompleteResponse(i -> sink.complete())
