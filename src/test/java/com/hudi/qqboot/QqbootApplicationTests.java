@@ -4,6 +4,9 @@ import com.hudi.qqboot.entity.IdiomData;
 import com.hudi.qqboot.service.IdiomDataService;
 import com.hudi.qqboot.service.IdiomDataBatchService;
 import com.hudi.qqboot.service.IdiomReader;
+import dev.langchain4j.community.model.dashscope.QwenEmbeddingModel;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.model.output.Response;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +21,9 @@ class QqbootApplicationTests {
     
     @Autowired
     private IdiomDataBatchService idiomDataBatchService;
+
+    @Autowired
+    private QwenEmbeddingModel qwenEmbeddingModel;
 
     @Test
     void contextLoads() {
@@ -40,6 +46,13 @@ class QqbootApplicationTests {
         idiomDataBatchService.batchInsertOptimized(idiomList);
         long endTime = System.currentTimeMillis();
         System.out.println("批量插入耗时: " + (endTime - startTime) + " ms");
+    }
+
+    @Test
+    public void enbeddingTest() {
+        Response<Embedding> embed = qwenEmbeddingModel.embed("你好，我叫xx");
+        System.out.println(embed.content().toString());
+        System.out.println(embed.content().vector().length);
     }
 
 

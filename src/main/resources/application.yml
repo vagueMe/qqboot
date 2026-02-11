@@ -30,6 +30,8 @@ langchain4j:
       streaming-chat-model:
         api-key: XXXXX
         modelName: qwen3-max
+      embedding-model: #向量模型
+        api-key: xxxxx
 qw:
   api:
     url: https://qw.deepseek.com/api/v1/chat/completions
