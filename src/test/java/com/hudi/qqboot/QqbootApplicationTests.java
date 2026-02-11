@@ -4,17 +4,29 @@ import com.hudi.qqboot.entity.IdiomData;
 import com.hudi.qqboot.service.IdiomDataService;
 import com.hudi.qqboot.service.IdiomDataBatchService;
 import com.hudi.qqboot.service.IdiomReader;
+import dev.langchain4j.community.model.dashscope.QwenChatModel;
 import dev.langchain4j.community.model.dashscope.QwenEmbeddingModel;
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.DocumentParser;
+import dev.langchain4j.data.document.loader.ClassPathDocumentLoader;
+import dev.langchain4j.data.document.parser.TextDocumentParser;
+import dev.langchain4j.data.document.splitter.DocumentByCharacterSplitter;
+import dev.langchain4j.data.document.splitter.DocumentByRegexSplitter;
+import dev.langchain4j.data.document.splitter.DocumentBySentenceSplitter;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.output.Response;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
+import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +40,9 @@ class QqbootApplicationTests {
 
     @Autowired
     private QwenEmbeddingModel qwenEmbeddingModel;
+
+    @Autowired
+    private QwenChatModel qwenChatModel;
 
     @Test
     void contextLoads() {
@@ -100,5 +115,59 @@ class QqbootApplicationTests {
         });
     }
 
+    @Test
+    public void test03() {
+        // 读取文档成语大全
+        Document document = ClassPathDocumentLoader.loadDocument("rag/成语大全.txt", new TextDocumentParser());
+//        System.out.println("text = " + document.text());
+        // 加入分割器，对文本分块
+        DocumentByRegexSplitter splitter = new DocumentByRegexSplitter(
+                "\\n+", // 分割符
+                "", // 分割符
+                300, // 每段最长字数
+                10 // 自然语言最大重叠字数
+        );
+        List<TextSegment> split = splitter.split(document);
+
+//        System.out.println(split);
+        // 将分块使用向量模型转为向量
+        List<Embedding> content = qwenEmbeddingModel.embedAll(split).content();
+        // 将向量数据存入
+        InMemoryEmbeddingStore<TextSegment> embeddingStore = new InMemoryEmbeddingStore<>();
+        embeddingStore.addAll(content, split);
+
+        // 构建查询向量
+        Embedding queryEmbedding = qwenEmbeddingModel.embed("请给我一个成语").content();
+        EmbeddingSearchRequest build = EmbeddingSearchRequest.builder()
+                .maxResults(1)
+                .queryEmbedding(queryEmbedding).build();
+        // 查询
+        EmbeddingSearchResult<TextSegment> search = embeddingStore.search(build);
+        search.matches().forEach( match -> {
+            System.out.println("匹配度：" + match.score());
+            System.out.println("内容：" + match.embedded().text());
+        });
+
+        //创建内容
+        EmbeddingStoreContentRetriever contentRetriever = EmbeddingStoreContentRetriever.builder()
+                .embeddingStore(embeddingStore)
+                .embeddingModel(qwenEmbeddingModel).
+                maxResults(3)
+                .minScore(0.7)
+                .build();
+
+        // 加入ai代理组手
+        IdiomDataAi idiomDataAi = AiServices.builder(IdiomDataAi.class)
+                .chatModel(qwenChatModel)
+                .contentRetriever(contentRetriever)
+                .build();
+
+        String chat = idiomDataAi.chat("给我一个“坐”字开头的成语成语");
+        System.out.println("chat = " + chat);
+    }
+
+    public interface IdiomDataAi {
+        String chat(String message);
+    }
 
 }
