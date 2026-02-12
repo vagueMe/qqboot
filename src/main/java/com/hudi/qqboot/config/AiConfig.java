@@ -5,6 +5,10 @@ import dev.langchain4j.community.model.dashscope.QwenChatModel;
 import dev.langchain4j.community.model.dashscope.QwenEmbeddingModel;
 import dev.langchain4j.community.model.dashscope.QwenStreamingChatModel;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.mcp.McpToolProvider;
+import dev.langchain4j.mcp.client.DefaultMcpClient;
+import dev.langchain4j.mcp.client.transport.McpTransport;
+import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -12,8 +16,12 @@ import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.*;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author hudi
@@ -21,6 +29,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class AiConfig {
+
+    @Value("${baiduMapApiKey}")
+    private String baiduMapApiKey;
 
     public static int tempInt = 0;
 
@@ -114,6 +125,7 @@ public class AiConfig {
         AssistantUnique assistant = AiServices.builder(AssistantUnique.class)
                 .chatModel(qwenChatModel)
                 .tools(toolsService)
+                .toolProvider(returnToolProvider())
                 .streamingChatModel(qwenStreamingChatModel)
                 .contentRetriever(contentRetriever)
 //                .chatMemoryProvider(memoryId ->
@@ -123,5 +135,20 @@ public class AiConfig {
 
 
         return assistant;
+    }
+
+    public McpToolProvider returnToolProvider() {
+
+        // 2.构建MCP服务传输方式  有sse和stdio两种， 这里演示的是stdio
+        StdioMcpTransport transport = new StdioMcpTransport.Builder().command(
+                List.of( "cmd", "/c", "npx", "-y", "@baidumap/mcp-server-baidu-map")
+        ).environment(Map.of("BAIDU_MAP_API_KEY", baiduMapApiKey))
+        .logEvents(true)
+        .build();
+
+        // 构建mcp客户端，指定传输方式
+        DefaultMcpClient mcpClient = new DefaultMcpClient.Builder().transport(transport).build();
+        // 构建mcp工具提工者，指定mcp客户端
+        return McpToolProvider.builder().mcpClients(List.of(mcpClient)).build();
     }
 }

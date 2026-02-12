@@ -21,6 +21,7 @@ deepseek:
   api:
     url: https://api.deepseek.com/chat/completions
     key: xxxxxx
+baiduMapApiKey: xxxxx
 langchain4j:
   community:
     dashscope:
