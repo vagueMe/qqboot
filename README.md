@@ -67,3 +67,5 @@ docker-compose logs -f
 ## 详细部署说明
 
 更多信息请参阅 `deploy-instructions.md` 文件。
+
+mcp 地址：https://mcp.so
